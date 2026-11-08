@@ -9,10 +9,13 @@
       systems = nixpkgs.lib.systems.flakeExposed;
       imports = [ inputs.haskell-flake.flakeModule ];
 
-      perSystem = { self', pkgs, ... }: 
+      perSystem = { self', pkgs, ... }:
         let
           inherit (pkgs.haskell.lib)
             overrideCabal doJailbreak dontCheck dontHaddock justStaticExecutables;
+          checkedShellScript = pkgs.callPackage ./nix/overlays/checked-shell-script.nix { };
+          withTools = pkgs.callPackage ./nix/tools/withTools.nix { inherit checkedShellScript; };
+          loadtestJwt = pkgs.callPackage ./nix/tools/loadtest.nix { inherit checkedShellScript withTools; };
         in
         {
 
@@ -57,6 +60,9 @@
           };
 
           devShell = {
+            tools = _: {
+              postgrest-loadtest-jwt = loadtestJwt.bin;
+            };
             # Enabled by default
             # enable = true;
 
