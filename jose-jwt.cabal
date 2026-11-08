@@ -73,7 +73,7 @@ Test-suite tests
                     , base >= 4.9 && < 5
                     , aeson
                     , bytestring
-                    , crypton
+                    , crypton < 2
                     , ram
                     , vector
                     , hspec >= 1.6
@@ -94,7 +94,7 @@ Test-suite doctests
   else
     Build-depends:    base >= 4.9 && < 5
                     , doctest >= 0.9.11
-                    , crypton
+                    , crypton < 2
 
 Benchmark bench-jwt
   Default-Language:   Haskell2010
@@ -106,6 +106,6 @@ Benchmark bench-jwt
                     , base >= 4.9 && < 5
                     , bytestring
                     , criterion
-                    , crypton
+                    , crypton < 2
 
   Ghc-Options:        -Wall -fno-warn-missing-signatures
