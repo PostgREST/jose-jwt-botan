@@ -32,7 +32,7 @@ import qualified Botan.Low.PubKey as Botan
 import qualified Botan.Low.PubKey.ECDSA as Botan
 import qualified Botan.Low.PubKey.Sign as Botan
 import qualified Botan.Low.PubKey.Verify as Botan
-import           Control.Exception (bracket, catch)
+import           Control.Exception (bracket, catch, displayException)
 import           Control.Monad (when, unless)
 import           Crypto.Error
 import           Crypto.Cipher.AES
@@ -165,19 +165,25 @@ ecVerify :: JwsAlg          -- ^ The signature algorithm. Used to obtain the has
          -> ECDSA.PublicKey -- ^ The key to check the signature with
          -> ByteString      -- ^ The message/content
          -> ByteString      -- ^ The signature to check
-         -> Bool            -- ^ Whether the signature is correct
+         -> Either JwtError Bool -- ^ Whether the signature is correct
 ecVerify a key msg sig = case a of
     ES256 -> case ECDSA.public_q key of
         ECC.Point x y -> unsafePerformIO $
-            catch (verifyES256 (i2osp x) (i2osp y) msg sig) (\(_ :: Botan.SomeBotanException) -> return False)
-        ECC.PointO -> False
+            -- Here we catch the BotanException and raise it to a Left, text-icu does something similar
+            -- https://github.com/haskell/text-icu/blob/413cc4bcceed473bd10a2e854ddb0f41e56c5cc9/Data/Text/ICU/Regex/Pure.hs#L116-L119
+            (Right <$> verifyES256 (i2osp x) (i2osp y) msg sig) `catch`
+            \(err :: Botan.SomeBotanException) -> return (Left (BotanError (T.pack (displayException err))))
+        ECC.PointO -> Right False
     ES384 -> go SHA384
     ES512 -> go SHA512
-    _     -> False
+    _     -> Right False
   where
     (r, s) = B.splitAt (B.length sig `div` 2) sig
     ecSig  = ECDSA.Signature (os2ip r) (os2ip s)
-    go h   = ECDSA.verify h key ecSig msg
+    go h   = Right (ECDSA.verify h key ecSig msg)
+-- Use NOINLINE to prevent the action execution more than once as recommended by GHC docs
+-- https://downloads.haskell.org/ghc/latest/docs/libraries/base-4.22.0.0-66f8/GHC-IO-Unsafe.html#v:unsafePerformIO
+{-# NOINLINE ecVerify #-}
 
 -- ES256 is really just a convention to combine the P-256 curve, the SHA-256 hash and the R || S signature
 verifyES256 :: ByteString -> ByteString -> ByteString -> ByteString -> IO Bool
@@ -188,12 +194,19 @@ verifyES256 xBytes yBytes message signature =
             -- Awkard interface as mentioned in the API docs but this sets x and y
             Botan.mpFromBin x xBytes
             Botan.mpFromBin y yBytes
-            -- secp256r1 is p-256
-            bracket (Botan.pubKeyLoadECDSA x y "secp256r1") Botan.pubKeyDestroy $ \pubKey ->
-                -- StandardFormatSignature is R || S
-                bracket (Botan.verifyCreate pubKey "SHA-256" Botan.StandardFormatSignature) Botan.verifyDestroy $ \ctx -> do
-                    Botan.verifyUpdate ctx message
-                    Botan.verifyFinish ctx signature
+            let p256curve = "secp256r1"
+                -- Botan throws an exception on invalid keys, see BOTAN_FFI_ERROR_BAD_PARAMETER on
+                -- https://github.com/randombit/botan/blob/3.12.0/src/lib/ffi/ffi_pkey_algs.cpp#L120-L140 which is mapped to BadParameterException.
+                -- Here we catch the exception as a normal verification failure, this so the upper level `decode` function
+                -- doesn't abort when trying the verification with another key.
+                loadKey = (Just <$> Botan.pubKeyLoadECDSA x y p256curve) `catch` \(_ :: Botan.BadParameterException) -> pure Nothing
+            bracket loadKey (mapM_ Botan.pubKeyDestroy) $ \loaded -> case loaded of
+                Nothing -> pure False
+                Just pubKey ->
+                    -- StandardFormatSignature is R || S
+                    bracket (Botan.verifyCreate pubKey "SHA-256" Botan.StandardFormatSignature) Botan.verifyDestroy $ \ctx -> do
+                        Botan.verifyUpdate ctx message
+                        Botan.verifyFinish ctx signature
 
 -- | Generates the symmetric key (content management key) and IV
 --

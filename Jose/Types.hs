@@ -168,6 +168,7 @@ data JwtError = KeyError Text      -- ^ No suitable key or wrong key type
               | BadSignature       -- ^ Signature is invalid
               | BadCrypto          -- ^ A cryptographic operation failed
               | Base64Error String -- ^ A base64 decoding error
+              | BotanError Text    -- ^ Botan failure
                 deriving (Eq, Show)
 
 instance ToJSON JwsHeader where

@@ -115,7 +115,7 @@ decode keySet encoding jwt = runExceptT $ do
             Nothing -> tryJwsKeys ks
 
     decodeWithJws :: MonadRandom m => Jwk -> ExceptT JwtError m (Maybe JwtContent)
-    decodeWithJws k = either (const $ return Nothing) (return . Just . Jws) $ case k of
+    decodeWithJws k = either handleErr (return . Just . Jws) $ case k of
         Ed25519PublicJwk kPub _ -> Jws.ed25519Decode kPub jwt
         Ed25519PrivateJwk _ kPub _ -> Jws.ed25519Decode kPub jwt
         Ed448PublicJwk kPub _ -> Jws.ed448Decode kPub jwt
@@ -126,6 +126,10 @@ decode keySet encoding jwt = runExceptT $ do
         EcPrivateJwk  kPr  _ _ _ _ -> Jws.ecDecode (ECDSA.toPublicKey kPr) jwt
         SymmetricJwk  kb   _ _ _ -> Jws.hmacDecode kb jwt
         UnsupportedJwk _ -> Left (KeyError "Unsupported JWKs cannot be used")
+
+    -- stop trying when a BotanError is hit
+    handleErr err@(BotanError _) = throwE err
+    handleErr _ = return Nothing
 
     decodeWithJwe :: MonadRandom m => Jwk -> ExceptT JwtError m (Maybe JwtContent)
     decodeWithJwe k = fmap (either (const Nothing) Just) (lift (Jwe.jwkDecode k jwt))
