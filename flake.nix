@@ -14,6 +14,7 @@
           inherit (pkgs.haskell.lib)
             overrideCabal doJailbreak dontCheck dontHaddock justStaticExecutables;
           checkedShellScript = pkgs.callPackage ./nix/overlays/checked-shell-script.nix { };
+          genCtags = pkgs.callPackage ./nix/tools/devTools.nix { inherit checkedShellScript; };
           withTools = pkgs.callPackage ./nix/tools/withTools.nix { inherit checkedShellScript; };
           loadtestJwt = pkgs.callPackage ./nix/tools/loadtest.nix { inherit checkedShellScript withTools; };
         in
@@ -61,6 +62,7 @@
 
           devShell = {
             tools = _: {
+              postgrest-gen-ctags = genCtags.bin;
               postgrest-loadtest-jwt = loadtestJwt.bin;
             };
             # Enabled by default
