@@ -26,13 +26,21 @@ module Jose.Internal.Crypto
 where
 
 
+import qualified Botan.Low.Error as Botan
+import qualified Botan.Low.MPI as Botan
+import qualified Botan.Low.PubKey as Botan
+import qualified Botan.Low.PubKey.ECDSA as Botan
+import qualified Botan.Low.PubKey.Sign as Botan
+import qualified Botan.Low.PubKey.Verify as Botan
+import           Control.Exception (bracket, catch)
 import           Control.Monad (when, unless)
 import           Crypto.Error
 import           Crypto.Cipher.AES
 import           Crypto.Cipher.Types hiding (IV)
 import           Crypto.Hash.Algorithms
-import           Crypto.Number.Serialize (os2ip)
+import           Crypto.Number.Serialize (i2osp, os2ip)
 import qualified Crypto.PubKey.ECC.ECDSA as ECDSA
+import qualified Crypto.PubKey.ECC.Types as ECC
 import qualified Crypto.PubKey.Ed25519 as Ed25519
 import qualified Crypto.PubKey.Ed448 as Ed448
 import qualified Crypto.PubKey.RSA as RSA
@@ -49,6 +57,7 @@ import qualified Data.ByteString as B
 import qualified Data.Serialize as Serialize
 import qualified Data.Text as T
 import           Data.Word (Word64, Word8)
+import           System.IO.Unsafe (unsafePerformIO)
 
 import           Jose.Jwa
 import           Jose.Types (JwtError(..))
@@ -158,7 +167,10 @@ ecVerify :: JwsAlg          -- ^ The signature algorithm. Used to obtain the has
          -> ByteString      -- ^ The signature to check
          -> Bool            -- ^ Whether the signature is correct
 ecVerify a key msg sig = case a of
-    ES256 -> go SHA256
+    ES256 -> case ECDSA.public_q key of
+        ECC.Point x y -> unsafePerformIO $
+            catch (verifyES256 (i2osp x) (i2osp y) msg sig) (\(_ :: Botan.SomeBotanException) -> return False)
+        ECC.PointO -> False
     ES384 -> go SHA384
     ES512 -> go SHA512
     _     -> False
@@ -166,6 +178,22 @@ ecVerify a key msg sig = case a of
     (r, s) = B.splitAt (B.length sig `div` 2) sig
     ecSig  = ECDSA.Signature (os2ip r) (os2ip s)
     go h   = ECDSA.verify h key ecSig msg
+
+-- ES256 is really just a convention to combine the P-256 curve, the SHA-256 hash and the R || S signature
+verifyES256 :: ByteString -> ByteString -> ByteString -> ByteString -> IO Bool
+verifyES256 xBytes yBytes message signature =
+    -- brackets are used to ensure the allocated objects from botan are released
+    bracket Botan.mpInit Botan.mpDestroy $ \x ->
+        bracket Botan.mpInit Botan.mpDestroy $ \y -> do
+            -- Awkard interface as mentioned in the API docs but this sets x and y
+            Botan.mpFromBin x xBytes
+            Botan.mpFromBin y yBytes
+            -- secp256r1 is p-256
+            bracket (Botan.pubKeyLoadECDSA x y "secp256r1") Botan.pubKeyDestroy $ \pubKey ->
+                -- StandardFormatSignature is R || S
+                bracket (Botan.verifyCreate pubKey "SHA-256" Botan.StandardFormatSignature) Botan.verifyDestroy $ \ctx -> do
+                    Botan.verifyUpdate ctx message
+                    Botan.verifyFinish ctx signature
 
 -- | Generates the symmetric key (content management key) and IV
 --

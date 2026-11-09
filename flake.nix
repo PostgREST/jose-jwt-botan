@@ -61,6 +61,10 @@
           };
 
           devShell = {
+            mkShellArgs = {
+              buildInputs = [ pkgs.botan3 ];
+              nativeBuildInputs = [ pkgs.pkg-config ];
+            };
             tools = _: {
               postgrest-gen-ctags = genCtags.bin;
               postgrest-loadtest-jwt = loadtestJwt.bin;
