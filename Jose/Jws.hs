@@ -166,7 +166,7 @@ rsaDecode key = decode (`rsaVerify` key)
 ecDecode :: ECDSA.PublicKey       -- ^ The key to check the signature with
          -> ByteString            -- ^ The encoded JWS
          -> Either JwtError Jws   -- ^ The decoded token if successful
-ecDecode key = decode (`ecVerify` key)
+ecDecode key = decodeEither (`ecVerify` key)
 
 sigTarget :: JwsAlg -> Maybe KeyId -> Payload -> ByteString
 sigTarget a kid payload = B.intercalate "." $ map B64.encode [encodeHeader hdr, bytes]
@@ -180,11 +180,18 @@ type JwsVerifier = JwsAlg -> ByteString -> ByteString -> Bool
 
 
 decode :: JwsVerifier -> ByteString -> Either JwtError Jws
-decode verify jwt = do
+decode verify jwt = decodeEither (\alg msg sig -> Right (verify alg msg sig)) jwt
+
+-- helper for making ecVerify (returns Either .. Bool) work with the other verify algorithms like rsaVerify (all return Bool)
+decodeEither :: (JwsAlg -> ByteString -> ByteString -> Either JwtError Bool)
+             -> ByteString
+             -> Either JwtError Jws
+decodeEither verify jwt = do
     decodableJwt <- P.parseJwt jwt
     case decodableJwt of
         P.DecodableJws hdr (P.Payload p) (P.Sig sig) (P.SigTarget signed) ->
-          if verify (jwsAlg hdr) signed sig
-              then Right (hdr, p)
-              else Left BadSignature
+          case verify (jwsAlg hdr) signed sig of
+              Left err    -> Left err
+              Right True  -> Right (hdr, p)
+              Right False -> Left BadSignature
         _ -> Left (BadHeader "JWT is not a JWS")
