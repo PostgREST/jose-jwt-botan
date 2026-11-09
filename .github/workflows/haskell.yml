@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-26.04]
         ghc-version: ['9.10.3', '9.8.4']
 
         # include:
@@ -30,6 +30,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Botan
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libbotan-3-dev pkg-config
 
       - name: Set up GHC ${{ matrix.ghc-version }}
         uses: haskell-actions/setup@v2
