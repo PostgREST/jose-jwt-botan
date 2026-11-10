@@ -83,6 +83,18 @@ spec = do
           let Just k31 = decodeStrict' a31jwk
           fstWithRNG (Jwt.decode [k31] Nothing a31) @?= fmap Jws a31decoded
 
+        it "does not evaluate another key after successful verification" $ do
+          let Just k31 = decodeStrict' a31jwk
+          fstWithRNG (Jwt.decode [k31, error "second key"] Nothing a31)
+            @?= fmap Jws a31decoded
+
+        it "tries another key after a mismatch and stops after success" $ do
+          let Just k31 = decodeStrict' a31jwk
+              wrongKey = SymmetricJwk "wrong key" Nothing Nothing Nothing
+          fstWithRNG (Jwt.decode [wrongKey, k31, error "key after success"] Nothing a31)
+            @?= fmap Jws a31decoded
+
+
       context "when using an unsecured JWT" $ do
         it "returns an error if chosen alg is unset" $
           fstWithRNG (Jwt.decode [] Nothing jwt61) @?= Left (BadAlgorithm "JWT is unsecured but expected 'alg' was not 'none'")
