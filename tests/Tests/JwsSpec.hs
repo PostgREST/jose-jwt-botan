@@ -19,7 +19,7 @@ import qualified Crypto.PubKey.RSA.PKCS15 as RSAPKCS15
 import Crypto.Random (withDRG, drgNewTest)
 
 import Jose.Jwt as Jwt
-import Jose.Jwk (Jwk(..))
+import Jose.Jwk (Jwk(..), JwkSet(..), EcCurve(..))
 import Jose.Jwa
 import qualified Jose.Internal.Base64 as B64
 import qualified Jose.Jws as Jws
@@ -89,11 +89,11 @@ spec = do
             @?= fmap Jws a31decoded
 
         it "tries another key after a mismatch and stops after success" $ do
+          Just (JwkSet fixtureKeys) <- decodeStrict' <$> B.readFile "tests/jwks.json"
+          wrongKey@(EcPublicJwk _ _ _ _ P_256) <- pure (fixtureKeys !! 2) -- kid "a2"
           let Just k31 = decodeStrict' a31jwk
-              wrongKey = SymmetricJwk "wrong key" Nothing Nothing Nothing
           fstWithRNG (Jwt.decode [wrongKey, k31, error "key after success"] Nothing a31)
             @?= fmap Jws a31decoded
-
 
       context "when using an unsecured JWT" $ do
         it "returns an error if chosen alg is unset" $
