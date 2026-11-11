@@ -12,6 +12,8 @@ import qualified Data.ByteString.Char8 ()
 import Data.Word (Word64)
 import Crypto.Hash.Algorithms (SHA256(..))
 import Crypto.MAC.HMAC (HMAC, hmac)
+import qualified Crypto.PubKey.ECC.ECDSA as ECDSA
+import qualified Crypto.PubKey.ECC.Types as ECC
 import qualified Crypto.PubKey.Ed25519 as Ed25519
 import qualified Crypto.PubKey.Ed448 as Ed448
 import qualified Crypto.PubKey.RSA as RSA
@@ -93,6 +95,17 @@ spec = do
           wrongKey@(EcPublicJwk _ _ _ _ P_256) <- pure (fixtureKeys !! 2) -- kid "a2"
           let Just k31 = decodeStrict' a31jwk
           fstWithRNG (Jwt.decode [wrongKey, k31, error "key after success"] Nothing a31)
+            @?= fmap Jws a31decoded
+
+        it "tries another key after trying an invalid key" $ do
+          -- Botan fails loading when the public key is (0, 0) or negative, see:
+          -- + pubkey_load_ec: https://github.com/randombit/botan/blob/3.12.0/src/lib/ffi/ffi_pkey_algs.cpp#L120-L140 (notice BOTAN_FFI_ERROR_BAD_PARAMETER)
+          -- + from_bigint_xy: https://github.com/randombit/botan/blob/3.12.0/src/lib/pubkey/ec_group/ec_apoint.cpp#L93-L108
+          -- As per the commit message https://github.com/randombit/botan/commit/79b312adba6ce167c4f6fdd4c5d57492f52ce6cf, these points are invalid "..not on the curve".
+          let invalidPublic = ECDSA.PublicKey (ECC.getCurveByName ECC.SEC_p256r1) (ECC.Point 0 0)
+              invalidKey = EcPublicJwk invalidPublic Nothing Nothing Nothing P_256
+              Just k31 = decodeStrict' a31jwk
+          fstWithRNG (Jwt.decode [invalidKey, k31, error "key after success"] Nothing a31)
             @?= fmap Jws a31decoded
 
       context "when using an unsecured JWT" $ do
