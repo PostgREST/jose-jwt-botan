@@ -1,3 +1,8 @@
+0.13.0
+------
+
+* Pin crypton to < 1.1.0 and use the `memory` package.
+
 0.12.0
 ------
 
