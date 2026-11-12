@@ -2,6 +2,10 @@
 
 A Haskell implementation of the JSON Object Signing and Encryption (JOSE) specifications and the related [JWT specification](http://tools.ietf.org/html/draft-ietf-oauth-json-web-token), as used, for example, in [OpenID Connect](http://openid.net/connect/).
 
+This is a fork of https://github.com/tekul/jose-jwt that uses https://github.com/haskell-cryptography/botan for better performance.
+
+It requires the `botan` C++ library, see more details on https://github.com/haskell-cryptography/botan#installation
+
 ## Background
 
 The [JWT specification](https://tools.ietf.org/html/rfc7519) was split into [`JWS`](https://www.rfc-editor.org/rfc/rfc7515.html) and [`JWE`](https://www.rfc-editor.org/rfc/rfc7516.html) during its development so does not contain much. A JWT is either a JWS or a JWE depending on whether it is signed or encrypted. It is encoded as a sequence of base64 strings separated by '.' characters [1].

@@ -1,3 +1,9 @@
+0.12.0
+------
+
+* Use botan for es256 verification, this makes the verification ~x9 faster and reduces time by ~89% by @steve-chavez in #1.
+* Fix JWS key selection not stopping at first success by @steve-chavez in #2
+
 0.11.0
 ------
 

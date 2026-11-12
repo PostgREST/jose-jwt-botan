@@ -82,7 +82,7 @@
         };
 
         # haskell-flake doesn't set the default package, but you can do it here.
-        packages.default = self'.packages.jose-jwt;
+        packages.default = self'.packages.jose-jwt-botan;
       };
     };
 }
