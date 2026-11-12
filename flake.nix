@@ -11,8 +11,6 @@
 
       perSystem = { self', pkgs, ... }:
         let
-          inherit (pkgs.haskell.lib)
-            overrideCabal doJailbreak dontCheck dontHaddock justStaticExecutables;
           checkedShellScript = pkgs.callPackage ./nix/overlays/checked-shell-script.nix { };
           genCtags = pkgs.callPackage ./nix/tools/devTools.nix { inherit checkedShellScript; };
           withTools = pkgs.callPackage ./nix/tools/withTools.nix { inherit checkedShellScript; };
@@ -34,22 +32,9 @@
           # (defined by `defaults.packages` option).
           #
           packages = {
-            # This doesn't seem to work since ram isn't in nixpkgs?
-            # It works using the otherOverlays code below.
-            # ram.source = "0.22.0";
+            # aeson.source = "1.5.0.0";      # Override aeson to a custom version from Hackage
+            # shower.source = inputs.shower; # Override shower to a custom source path
           };
-
-          otherOverlays = [
-            (hself: hsuper: {
-                ram = (hself.callHackageDirect {
-                  pkg = "ram";
-                  ver = "0.22.0";
-                  sha256 = "sha256-Z7PnMu61TG/e9QEylTJQC68YAkltCufP3FD4oOBDj9c=";
-                } { });
-            })
-
-          ];
-
           settings = {
             #  aeson = {
             #    check = false;
