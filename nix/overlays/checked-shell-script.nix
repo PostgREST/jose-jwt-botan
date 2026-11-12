@@ -83,16 +83,16 @@ let
     + lib.optionalString redirectTixFiles ''
       # storing tix files in a temporary throw away directory avoids mix/tix conflicts after changes
       hpctixdir=$(${coreutils}/bin/mktemp -d)
-      export HPCTIXFILE="$hpctixdir"/jose-jwt.tix
+      export HPCTIXFILE="$hpctixdir"/jose-jwt-botan.tix
       trap 'rm -rf $hpctixdir' EXIT
     ''
 
     + lib.optionalString (workingDir != null) ''
       cd "$(${git}/bin/git rev-parse --show-toplevel)"
 
-      if test ! -f jose-jwt.cabal; then
-        >&2 echo "Couldn't find jose-jwt.cabal. Please make sure to" \
-                 "run this command somewhere in the jose-jwt repo."
+      if test ! -f jose-jwt-botan.cabal; then
+        >&2 echo "Couldn't find jose-jwt-botan.cabal. Please make sure to" \
+                 "run this command somewhere in the jose-jwt-botan repo."
         exit 1
       fi
 
