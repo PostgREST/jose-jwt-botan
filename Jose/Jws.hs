@@ -180,7 +180,7 @@ type JwsVerifier = JwsAlg -> ByteString -> ByteString -> Bool
 
 
 decode :: JwsVerifier -> ByteString -> Either JwtError Jws
-decode verify jwt = decodeEither (\alg msg sig -> Right (verify alg msg sig)) jwt
+decode verify = decodeEither (\alg msg sig -> Right (verify alg msg sig))
 
 -- helper for making ecVerify (returns Either .. Bool) work with the other verify algorithms like rsaVerify (all return Bool)
 decodeEither :: (JwsAlg -> ByteString -> ByteString -> Either JwtError Bool)

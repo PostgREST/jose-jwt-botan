@@ -60,7 +60,7 @@ spec = do
 
         it "decodes the JWT to the expected header and payload with the JWK" $ do
           let Just k21 = decodeStrict' a21jwk
-          fstWithRNG (Jwt.decode [k21] (Just (JwsEncoding RS256)) a21) @?= (Right $ Jws (defJwsHdr {jwsAlg = RS256}, a21Payload))
+          fstWithRNG (Jwt.decode [k21] (Just (JwsEncoding RS256)) a21) @?= Right (Jws (defJwsHdr {jwsAlg = RS256}, a21Payload))
 
         it "decodes the successfully without verification" $ do
            let Right (_, claims) = decodeClaims a21 :: Either JwtError (JwtHeader, JwtClaims)
@@ -120,7 +120,7 @@ spec = do
       context "When using RFC8037 Appendix A data" $ do
         let ed25519JwtDecoded = Right (defJwsHdr { jwsAlg = EdDSA }, ed25519Payload)
             Just pubKey = decodeStrict' ed25519PubJwk
-            Just (secKey@(Ed25519PrivateJwk kPr kPub _)) = decodeStrict' ed25519SecJwk
+            Just secKey@(Ed25519PrivateJwk kPr kPub _) = decodeStrict' ed25519SecJwk
             sign = Ed25519.sign kPr kPub
         it "decodes the JWT to the expected header and payload" $ do
           fstWithRNG (Jwt.decode [pubKey] Nothing ed25519Jwt) @?= fmap Jws ed25519JwtDecoded
@@ -145,7 +145,7 @@ spec = do
 
     describe "Ed448 signing and verification" $ do
       let Just pubKey = decodeStrict' ed448PubJwk
-          Just (secKey@(Ed448PrivateJwk kPr kPub _)) = decodeStrict' ed448SecJwk
+          Just secKey@(Ed448PrivateJwk kPr kPub _) = decodeStrict' ed448SecJwk
           sign = Ed448.sign kPr kPub
 
       context "" $ do

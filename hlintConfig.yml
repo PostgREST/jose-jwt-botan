@@ -1,0 +1,10 @@
+# Arguments passed to hlint
+- arguments: [-XQuasiQuotes, -XNoPatternSynonyms, -XCPP]
+
+# Warnings
+- warn: { lhs: "a == a", rhs: "True",  note: "This comparison always evaluates to True" }
+- warn: { lhs: "a /= a", rhs: "False", note: "This comparison always evaluates to False" }
+- warn: { lhs: "a < a",  rhs: "False", note: "This comparison always evaluates to False" }
+- warn: { lhs: "a > a",  rhs: "False", note: "This comparison always evaluates to False" }
+- warn: { lhs: "a <= a", rhs: "True",  note: "This comparison always evaluates to True" }
+- warn: { lhs: "a >= a", rhs: "True",  note: "This comparison always evaluates to True" }

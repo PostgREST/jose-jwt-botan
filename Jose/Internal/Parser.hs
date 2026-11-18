@@ -68,9 +68,7 @@ jwt = do
             s <- sig (jwsAlg h)
             pure $ DecodableJws h (Payload payload) s (SigTarget (B.concat [raw, ".", payloadB64]))
         JweH h ->
-            DecodableJwe
-                <$> pure h
-                <*> encryptedCEK
+            (DecodableJwe h <$> encryptedCEK)
                 <*> iv (jweEnc h)
                 <*> encryptedPayload
                 <*> authTag (jweEnc h)

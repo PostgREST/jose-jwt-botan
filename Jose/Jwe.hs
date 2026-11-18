@@ -53,6 +53,7 @@ import qualified Data.ByteArray as BA
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
+import Data.Either (fromRight)
 import Data.Maybe (isNothing)
 import Jose.Types
 import qualified Jose.Internal.Base64 as B64
@@ -122,7 +123,7 @@ doDecode decodeCek jwt = do
             let alg = jweAlg hdr
                 enc = jweEnc hdr
             (dummyCek, _) <- lift $ generateCmkAndIV enc
-            let decryptedCek = either (const dummyCek) id $ decodeCek alg ek
+            let decryptedCek = fromRight dummyCek $ decodeCek alg ek
                 cek = if BA.length decryptedCek == BA.length dummyCek
                         then decryptedCek
                         else dummyCek

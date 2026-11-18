@@ -1,0 +1,22 @@
+name: Hlint
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - '**.hs'
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - '**.hs'
+
+jobs:
+  hlint:
+    name: Hlint - Linux
+    runs-on: ubuntu-26.04
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Run hlint
+      run: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s -- Jose/ tests/ benchmarks/
