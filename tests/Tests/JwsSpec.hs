@@ -85,6 +85,11 @@ spec = do
           let Just k31 = decodeStrict' a31jwk
           fstWithRNG (Jwt.decode [k31] Nothing a31) @?= fmap Jws a31decoded
 
+        let a41decoded = Right (defJwsHdr {jwsAlg = ES384}, a41Payload)
+        it "decodes the JWT to the expected header and payload (ES384)" $ do
+          let Just k41 = decodeStrict' a41jwk
+          fstWithRNG (Jwt.decode [k41] Nothing a41) @?= fmap Jws a41decoded
+
         it "does not evaluate another key after successful verification" $ do
           let Just k31 = decodeStrict' a31jwk
           fstWithRNG (Jwt.decode [k31, error "second key"] Nothing a31)
@@ -204,6 +209,10 @@ a31Payload = a11Payload
 a31 = "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q"
 a31jwk = "{\"kty\":\"EC\", \"crv\":\"P-256\", \"x\":\"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU\", \"y\":\"x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0\", \"d\":\"jpsQnnGQmL-YBIffH1136cspYG6-0iY7X1fCE9-E9LI\" }"
 
+a41Header = "{\"alg\":\"ES384\"}" :: B.ByteString
+a41Payload = a11Payload
+a41 = "eyJhbGciOiJFUzM4NCJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.J5KsPUDh01I4VMNYJN8PAOQ7pu43Gm6ebmXKG3Oiq4nbf1flsDPpHbjCh3iZ9VkEFimXVmMwYV32k4-h-u4r_IMYQIh9MgoD6KIR7V1i7WdgWKljtpfg_hY1iZJjgsnG"
+a41jwk = "{\"kty\":\"EC\", \"crv\":\"P-384\", \"x\":\"t5ORPpXPEm1Gs1fBSO2s47_4loJ4kt4uinoaeAJVKY8tZNSj1cUGJDxS0HpY3mxo\", \"y\":\"AwP1so-gWo3EZbOPPo98u8Ll1ibQltVnlWNpnTHAl7gaE9cwUzWzeBeMyKoG6jBT\", \"d\":\"rI5_8ULHoMIbX-fgV8en97qCRO3iUZT5gvc44ziH_R-e6Pe463qJ5KGCj9FHuIV4\" }"
 
 hmacKey = B.pack [
     3, 35, 53, 75, 43, 15, 165, 188, 131, 126, 6, 101, 119, 123, 166,
