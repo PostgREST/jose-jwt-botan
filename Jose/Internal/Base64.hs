@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts, CPP #-}
+{-# LANGUAGE FlexibleContexts, CPP #-}
 {-# OPTIONS_HADDOCK hide #-}
 
 -- | JWT-style base64 encoding and decoding

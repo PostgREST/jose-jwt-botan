@@ -11,6 +11,6 @@ msgPrefix = "The best laid schemes o' mice and men..."
 
 main = do
     --rng <- cprgCreate `fmap` createEntropyPool :: IO SystemRNG
-    let !msgs = map ((B.append msgPrefix) . B.pack . show) [1..10000]
+    let !msgs = map (B.append msgPrefix . B.pack . show) [1..10000]
 
-    mapM_ B.putStrLn $ map (hmacEncode HS512 jwsHmacKey) msgs
+    mapM_ (B.putStrLn . hmacEncode HS512 jwsHmacKey) msgs

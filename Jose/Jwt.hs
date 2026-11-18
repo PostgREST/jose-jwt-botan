@@ -102,7 +102,7 @@ decode keySet encoding jwt = runExceptT $ do
             unless (isNothing e || e == Just (JweEncoding (jweAlg hdr) (jweEnc hdr))) $
                 throwE (BadAlgorithm "Expected encoding doesn't match JWE header")
             ks <- checkKeys $ filter (canDecodeJwe hdr) keySet
-            msum <$> (mapM decodeWithJwe ks)
+            msum <$> mapM decodeWithJwe ks
     case decoded of
         Nothing  -> throwE $ KeyError "None of the keys was able to decode the JWT"
         Just jwtContent -> return jwtContent

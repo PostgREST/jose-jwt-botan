@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE LambdaCase #-}
 {-# OPTIONS_HADDOCK prune #-}
 
 -- | Internal functions for encrypting and signing / decrypting
@@ -49,7 +50,7 @@ import qualified Crypto.PubKey.RSA.OAEP as OAEP
 import           Crypto.Random (MonadRandom, getRandomBytes)
 import           Crypto.MAC.HMAC (HMAC (..), hmac)
 import           Data.Bits (xor)
-import           Data.Bifunctor (first)
+import           Data.Bifunctor (first, second)
 import           Data.ByteArray (ByteArray, ScrubbedBytes)
 import qualified Data.ByteArray as BA
 import           Data.ByteString (ByteString)
@@ -200,7 +201,7 @@ verifyES256 xBytes yBytes message signature =
                 -- Here we catch the exception as a normal verification failure, this so the upper level `decode` function
                 -- doesn't abort when trying the verification with another key.
                 loadKey = (Just <$> Botan.pubKeyLoadECDSA x y p256curve) `catch` \(_ :: Botan.BadParameterException) -> pure Nothing
-            bracket loadKey (mapM_ Botan.pubKeyDestroy) $ \loaded -> case loaded of
+            bracket loadKey (mapM_ Botan.pubKeyDestroy) $ \case
                 Nothing -> pure False
                 Just pubKey ->
                     -- StandardFormatSignature is R || S
@@ -424,7 +425,7 @@ keyWrap alg kek cek = case alg of
             a' = txor t (BA.take 8 b)
             r' = BA.drop 8 b
             next = doRound enc (i+1) (a', rs) j
-        in (fst next, r' : snd next)
+        in second (r' :) next
 
 txor :: ByteArray ba => Word8 -> ba -> ba
 txor t b =
@@ -465,4 +466,4 @@ keyUnwrap kek alg encK = case alg of
             a' = BA.take 8 b
             r' = BA.drop 8 b
             next = doRound dec (i-1) (a', rs) j
-        in (fst next, r' : snd next)
+        in second (r' :) next

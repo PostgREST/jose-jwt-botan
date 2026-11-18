@@ -291,8 +291,7 @@ instance Arbitrary Enc where
 instance Arbitrary JWEAlgs where
   arbitrary = do
     a <- elements [RSA1_5, RSA_OAEP, RSA_OAEP_256, A128KW, A192KW, A256KW]
-    e <- arbitrary
-    return $ JWEAlgs a e
+    JWEAlgs a <$> arbitrary
 
 instance Arbitrary RNG where
   arbitrary = RNG . B.pack <$> vector 600

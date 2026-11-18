@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, DeriveGeneric, RecordWildCards, CPP #-}
+{-# LANGUAGE OverloadedStrings, DeriveGeneric, RecordWildCards, CPP, LambdaCase #-}
 {-# OPTIONS_HADDOCK prune #-}
 
 module Jose.Jwk
@@ -245,8 +245,7 @@ jwkAlg key = case key of
 newtype JwkBytes = JwkBytes {bytes :: ByteString} deriving (Show)
 
 instance FromJSON KeyType where
-    parseJSON = withText "KeyType" $ \t ->
-        case t of
+    parseJSON = withText "KeyType" $ \case
           "RSA" -> pure Rsa
           "OKP" -> pure Okp
           "EC"  -> pure Ec
@@ -261,8 +260,7 @@ instance ToJSON KeyType where
                     Oct -> String "oct"
 
 instance FromJSON KeyUse where
-    parseJSON = withText "KeyUse" $ \t ->
-        case t of
+    parseJSON = withText "KeyUse" $ \case
           "sig" -> pure Sig
           "enc" -> pure Enc
           _     -> fail "'use' value must be either 'sig' or 'enc'"
@@ -273,8 +271,7 @@ instance ToJSON KeyUse where
                     Enc -> String "enc"
 
 instance FromJSON EcCurve where
-    parseJSON = withText "EcCurve" $ \t ->
-        case t of
+    parseJSON = withText "EcCurve" $ \case
           "P-256" -> pure P_256
           "P-384" -> pure P_384
           "P-521" -> pure P_521

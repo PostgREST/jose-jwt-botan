@@ -132,10 +132,10 @@ data JwtClaims = JwtClaims
 instance FromJSON JwtClaims where
 #if MIN_VERSION_aeson(2,0,0)
     parseJSON v@(Object o) = case KM.lookup "aud" o of
-        Just (a@(String _)) -> genericParseJSON claimsOptions $ Object $ KM.insert "aud" (Array $ Data.Vector.singleton a) o
+        Just a@(String _) -> genericParseJSON claimsOptions $ Object $ KM.insert "aud" (Array $ Data.Vector.singleton a) o
 #else
     parseJSON v@(Object o) = case H.lookup "aud" o of
-        Just (a@(String _)) -> genericParseJSON claimsOptions $ Object $ H.insert "aud" (Array $ singleton a) o
+        Just a@(String _) -> genericParseJSON claimsOptions $ Object $ H.insert "aud" (Array $ singleton a) o
 #endif
         _                   -> genericParseJSON claimsOptions v
     parseJSON _            = fail "JwtClaims must be an object"
