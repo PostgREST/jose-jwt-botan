@@ -168,13 +168,7 @@ ecVerify :: JwsAlg          -- ^ The signature algorithm. Used to obtain the has
          -> ByteString      -- ^ The signature to check
          -> Either JwtError Bool -- ^ Whether the signature is correct
 ecVerify a key msg sig = case a of
-    ES256 -> case ECDSA.public_q key of
-        ECC.Point x y -> unsafePerformIO $
-            -- Here we catch the BotanException and raise it to a Left, text-icu does something similar
-            -- https://github.com/haskell/text-icu/blob/413cc4bcceed473bd10a2e854ddb0f41e56c5cc9/Data/Text/ICU/Regex/Pure.hs#L116-L119
-            (Right <$> verifyES256 (i2osp x) (i2osp y) msg sig) `catch`
-            \(err :: Botan.SomeBotanException) -> return (Left (BotanError (T.pack (displayException err))))
-        ECC.PointO -> Right False
+    ES256 -> verifyWithExceptionCatch "secp256r1" "SHA-256"
     ES384 -> go SHA384
     ES512 -> go SHA512
     _     -> Right False
@@ -182,32 +176,39 @@ ecVerify a key msg sig = case a of
     (r, s) = B.splitAt (B.length sig `div` 2) sig
     ecSig  = ECDSA.Signature (os2ip r) (os2ip s)
     go h   = Right (ECDSA.verify h key ecSig msg)
+    verifyWithExceptionCatch cur hash =
+      case ECDSA.public_q key of
+          ECC.Point x y -> unsafePerformIO $
+              -- Here we catch the BotanException and raise it to a Left, text-icu does something similar
+              -- https://github.com/haskell/text-icu/blob/413cc4bcceed473bd10a2e854ddb0f41e56c5cc9/Data/Text/ICU/Regex/Pure.hs#L116-L119
+              (Right <$> verifyESAlgo cur hash (i2osp x) (i2osp y) msg sig) `catch`
+              \(err :: Botan.SomeBotanException) -> return (Left (BotanError (T.pack (displayException err))))
+          ECC.PointO -> Right False
 -- Use NOINLINE to prevent the action execution more than once as recommended by GHC docs
 -- https://downloads.haskell.org/ghc/latest/docs/libraries/base-4.22.0.0-66f8/GHC-IO-Unsafe.html#v:unsafePerformIO
 {-# NOINLINE ecVerify #-}
 
--- ES256 is really just a convention to combine the P-256 curve, the SHA-256 hash and the R || S signature
-verifyES256 :: ByteString -> ByteString -> ByteString -> ByteString -> IO Bool
-verifyES256 xBytes yBytes message signature =
+-- ESXXX algorithms combine the curve, the SHA hash and the R || S signature
+verifyESAlgo :: ByteString -> ByteString -> ByteString -> ByteString -> ByteString -> ByteString -> IO Bool
+verifyESAlgo pcurve sha xBytes yBytes message signature =
     -- brackets are used to ensure the allocated objects from botan are released
     bracket Botan.mpInit Botan.mpDestroy $ \x ->
         bracket Botan.mpInit Botan.mpDestroy $ \y -> do
             -- Awkard interface as mentioned in the API docs but this sets x and y
             Botan.mpFromBin x xBytes
             Botan.mpFromBin y yBytes
-            let p256curve = "secp256r1"
                 -- Botan throws an exception on invalid keys, see BOTAN_FFI_ERROR_BAD_PARAMETER on
                 -- https://github.com/randombit/botan/blob/3.12.0/src/lib/ffi/ffi_pkey_algs.cpp#L120-L140 which is mapped to BadParameterException.
                 -- Here we catch the exception as a normal verification failure, this so the upper level `decode` function
                 -- doesn't abort when trying the verification with another key.
-                loadKey = (Just <$> Botan.pubKeyLoadECDSA x y p256curve) `catch` \(_ :: Botan.BadParameterException) -> pure Nothing
+            let loadKey = (Just <$> Botan.pubKeyLoadECDSA x y pcurve) `catch` \(_ :: Botan.BadParameterException) -> pure Nothing
             bracket loadKey (mapM_ Botan.pubKeyDestroy) $ \case
-                Nothing -> pure False
-                Just pubKey ->
-                    -- StandardFormatSignature is R || S
-                    bracket (Botan.verifyCreate pubKey "SHA-256" Botan.StandardFormatSignature) Botan.verifyDestroy $ \ctx -> do
-                        Botan.verifyUpdate ctx message
-                        Botan.verifyFinish ctx signature
+              Nothing -> pure False
+              Just pubKey ->
+                -- StandardFormatSignature is R || S
+                bracket (Botan.verifyCreate pubKey sha Botan.StandardFormatSignature) Botan.verifyDestroy $ \ctx -> do
+                    Botan.verifyUpdate ctx message
+                    Botan.verifyFinish ctx signature
 
 -- | Generates the symmetric key (content management key) and IV
 --
