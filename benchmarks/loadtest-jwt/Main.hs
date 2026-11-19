@@ -51,7 +51,7 @@ main = do
     times = 10
 
 -- | PostgREST supports more algorithms (see https://github.com/PostgREST/postgrest/issues/5379) but we only load test these variants
-data CliAlgorithm = RS256 | ES256 | Ed25519 deriving (Show)
+data CliAlgorithm = RS256 | ES256 | ES384 | Ed25519 deriving (Show)
 
 readCLI :: IO CliAlgorithm
 readCLI = O.execParser $ O.info (O.helper <*> algo) (O.progDesc "JWT Verification Loadtest")
@@ -59,6 +59,7 @@ readCLI = O.execParser $ O.info (O.helper <*> algo) (O.progDesc "JWT Verificatio
     algo = O.option (O.eitherReader readAlgo) $ O.long "algorithm"
     readAlgo "RS256" = Right RS256
     readAlgo "ES256" = Right ES256
+    readAlgo "ES384" = Right ES384
     readAlgo "Ed25519" = Right Ed25519
     readAlgo _ = Left "Unknown algorithm"
 
@@ -80,6 +81,7 @@ generateKeyPair algorithm = do
           let keySize = 4096 `div` 8
           in  (JOSE.RS256, JOSE.RSAGenParam keySize)
         ES256 -> (JOSE.ES256, JOSE.ECGenParam JOSE.P_256)
+        ES384 -> (JOSE.ES384, JOSE.ECGenParam JOSE.P_384)
         Ed25519 -> (JOSE.EdDSA, JOSE.OKPGenParam JOSE.Ed25519)
   privateKey <- JOSE.genJWK params
   case JSON.fromJSON $ JSON.toJSON $ view JOSE.asPublicKey privateKey of
