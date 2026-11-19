@@ -169,7 +169,7 @@ ecVerify :: JwsAlg          -- ^ The signature algorithm. Used to obtain the has
          -> Either JwtError Bool -- ^ Whether the signature is correct
 ecVerify a key msg sig = case a of
     ES256 -> verifyWithExceptionCatch "secp256r1" "SHA-256"
-    ES384 -> go SHA384
+    ES384 -> verifyWithExceptionCatch "secp384r1" "SHA-384"
     ES512 -> go SHA512
     _     -> Right False
   where
