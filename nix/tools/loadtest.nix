@@ -21,7 +21,7 @@ checkedShellScript {
 
   printf "## JWT Verification Loadtest\n\n" >> "$output"
 
-  for algorithm in RS256 ES256 Ed25519; do
+  for algorithm in RS256 ES256 ES384 Ed25519; do
     ${withTools.withMonitor} --subseconds "$tmpdir/$algorithm.csv" \
       "$benchmark" --algorithm "$algorithm" +RTS -N1 -RTS >> "$output"
   done
