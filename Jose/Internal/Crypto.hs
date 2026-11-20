@@ -170,12 +170,9 @@ ecVerify :: JwsAlg          -- ^ The signature algorithm. Used to obtain the has
 ecVerify a key msg sig = case a of
     ES256 -> verifyWithExceptionCatch "secp256r1" "SHA-256"
     ES384 -> verifyWithExceptionCatch "secp384r1" "SHA-384"
-    ES512 -> go SHA512
+    ES512 -> verifyWithExceptionCatch "secp521r1" "SHA-512"
     _     -> Right False
   where
-    (r, s) = B.splitAt (B.length sig `div` 2) sig
-    ecSig  = ECDSA.Signature (os2ip r) (os2ip s)
-    go h   = Right (ECDSA.verify h key ecSig msg)
     verifyWithExceptionCatch cur hash =
       case ECDSA.public_q key of
           ECC.Point x y -> unsafePerformIO $
