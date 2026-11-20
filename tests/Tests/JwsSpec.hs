@@ -90,6 +90,11 @@ spec = do
           let Just k41 = decodeStrict' a41jwk
           fstWithRNG (Jwt.decode [k41] Nothing a41) @?= fmap Jws a41decoded
 
+        let a51decoded = Right (defJwsHdr {jwsAlg = ES512}, a51Payload)
+        it "decodes the JWT to the expected header and payload (ES512)" $ do
+          let Just k51 = decodeStrict' a51jwk
+          fstWithRNG (Jwt.decode [k51] Nothing a51) @?= fmap Jws a51decoded
+
         it "does not evaluate another key after successful verification" $ do
           let Just k31 = decodeStrict' a31jwk
           fstWithRNG (Jwt.decode [k31, error "second key"] Nothing a31)
@@ -213,6 +218,12 @@ a41Header = "{\"alg\":\"ES384\"}" :: B.ByteString
 a41Payload = a11Payload
 a41 = "eyJhbGciOiJFUzM4NCJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.J5KsPUDh01I4VMNYJN8PAOQ7pu43Gm6ebmXKG3Oiq4nbf1flsDPpHbjCh3iZ9VkEFimXVmMwYV32k4-h-u4r_IMYQIh9MgoD6KIR7V1i7WdgWKljtpfg_hY1iZJjgsnG"
 a41jwk = "{\"kty\":\"EC\", \"crv\":\"P-384\", \"x\":\"t5ORPpXPEm1Gs1fBSO2s47_4loJ4kt4uinoaeAJVKY8tZNSj1cUGJDxS0HpY3mxo\", \"y\":\"AwP1so-gWo3EZbOPPo98u8Ll1ibQltVnlWNpnTHAl7gaE9cwUzWzeBeMyKoG6jBT\", \"d\":\"rI5_8ULHoMIbX-fgV8en97qCRO3iUZT5gvc44ziH_R-e6Pe463qJ5KGCj9FHuIV4\" }"
+
+
+a51Header = "{\"alg\":\"ES512\"}" :: B.ByteString
+a51Payload = a11Payload
+a51 = "eyJhbGciOiJFUzUxMiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.AYSexs7jt7oRsug2k3xBpZyHDdprRXe3B9_du10Vv5mdFVg7MEVetDN8cnj73gegqpSRyvlmGij-VOVdQZDc15PvAZ3YnjO-lhXY24FCbzsB0KPCpGKlj_HGGiUdba81cS3ik6m6bwpUZkZJ1WJX6Mfr0GrZM2OjzvQ1CZAH1vCk0TYu"
+a51jwk = "{\"kty\":\"EC\", \"crv\":\"P-521\", \"x\":\"ANyj1CiuSAv0TbSCbnYvYEJJZIQzBEDS1G6BIhpmgmGBrCdF-o_C0JQpzPX1XPXMLMvSERnAG8gYjyauE5jG1BAu\", \"y\":\"AAW1oGYSlzQglXgdhuPmrQt4lZh9fjTiyV7Em6pO3hECI-y1HZxt52vKSCk9i0rWzeWftJLgpnDqXc1WeyduKgJk\", \"d\":\"AI0vxgEegWyl4kLmv6EE24hwlQOj8xIv52BC8eDnoHlpTildltDR98_K2XjC23XfhNFEQ2X2W1RcXopg5J5qG_Oa\" }"
 
 hmacKey = B.pack [
     3, 35, 53, 75, 43, 15, 165, 188, 131, 126, 6, 101, 119, 123, 166,
