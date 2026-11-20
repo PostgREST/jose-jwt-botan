@@ -1,3 +1,8 @@
+Unreleased
+----------
+
+* Use botan for `ES384` and `ES512` verification, this makes the verification ~x7.5 faster and reduces time by ~87% by @taimoorzaeem in #3.
+
 0.13.0
 ------
 
