@@ -1,0 +1,35 @@
+name: Loadtest
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# INFO: The following configuration block ensures that only one build runs per branch,
+# which may be desirable for projects with a costly build process.
+# Remove this block from the CI workflow to let each CI job run to completion.
+concurrency:
+  group: loadtest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  loadtest-jwt:
+    name: JWT Loadtest
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: nixbuild/nix-quick-install-action@9f63be77f412a248c9d9a65a4c82cf066cdf8f0c # v35
+        with:
+          nix_conf: |-
+            experimental-features = nix-command flakes
+
+      - name: Update Cabal package index
+        run: nix develop --command cabal update
+
+      - name: Run JWT loadtest
+        shell: bash
+        run: nix develop --command postgrest-loadtest-jwt | tee -a "$GITHUB_STEP_SUMMARY"
