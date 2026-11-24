@@ -1,5 +1,10 @@
-Unreleased
-----------
+# Change Log
+
+All notable changes to this project will be documented in this file.
+This project adheres to [Semantic Versioning](http://semver.org/).
+
+0.14.0
+------
 
 * Use botan for `ES384` and `ES512` verification, this makes the verification ~x7.5 faster and reduces time by ~87% by @taimoorzaeem in #3.
 

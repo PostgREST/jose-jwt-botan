@@ -1,5 +1,5 @@
 Name:               jose-jwt-botan
-Version:            0.13.0
+Version:            0.14.0
 Synopsis:           JSON Object Signing and Encryption Library using Botan
 Homepage:           https://github.com/PostgREST/jose-jwt-botan
 Bug-Reports:        https://github.com/PostgREST/jose-jwt-botan/issues
@@ -15,7 +15,7 @@ Description:
     It requires the botan C++ library, see more details on https://github.com/haskell-cryptography/botan#installation
 
 Author:             Luke Taylor <tekul.hs@gmail.com>
-Maintainer:         Steve Chavez <stevechavezast@gmail.com>
+Maintainer:         Steve Chavez <stevechavezast@gmail.com>, Taimoor Zaeem <taimoorzaeem@gmail.com>
 License:            BSD3
 License-File:       LICENSE
 Build-Type:         Simple
