@@ -1,4 +1,4 @@
-# `jose-jwt`
+# `jose-jwt-botan`
 
 A Haskell implementation of the JSON Object Signing and Encryption (JOSE) specifications and the related [JWT specification](http://tools.ietf.org/html/draft-ietf-oauth-json-web-token), as used, for example, in [OpenID Connect](http://openid.net/connect/).
 
