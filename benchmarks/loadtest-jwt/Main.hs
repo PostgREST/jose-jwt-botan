@@ -51,13 +51,23 @@ main = do
     times = 10
 
 -- | PostgREST supports more algorithms (see https://github.com/PostgREST/postgrest/issues/5379) but we only load test these variants
-data CliAlgorithm = RS256 | ES256 | ES384 | ES512 | Ed25519 deriving (Show)
+data CliAlgorithm
+  = RS256
+  | RS384
+  | RS512
+  | ES256
+  | ES384
+  | ES512
+  | Ed25519
+  deriving (Show)
 
 readCLI :: IO CliAlgorithm
 readCLI = O.execParser $ O.info (O.helper <*> algo) (O.progDesc "JWT Verification Loadtest")
   where
     algo = O.option (O.eitherReader readAlgo) $ O.long "algorithm"
     readAlgo "RS256" = Right RS256
+    readAlgo "RS384" = Right RS384
+    readAlgo "RS512" = Right RS512
     readAlgo "ES256" = Right ES256
     readAlgo "ES384" = Right ES384
     readAlgo "ES512" = Right ES512
@@ -75,12 +85,15 @@ verify jwks token = do
 
 generateKeyPair :: CliAlgorithm -> IO (JOSE.Alg, JWT.Jwk, JOSE.JWK)
 generateKeyPair algorithm = do
-  let (jwsAlgorithm, params) = case algorithm of
-        RS256 ->
-          -- The key size is taken from the example on hs-jose
-          -- https://github.com/frasertweedale/hs-jose/blob/ffd6a66c2e2844ec5e506806963f4e46accf1ae9/src/Crypto/JOSE/JWK.hs#L34
-          let keySize = 4096 `div` 8
-          in  (JOSE.RS256, JOSE.RSAGenParam keySize)
+  -- A minimum of 2048 key size is required, however we should test other common key sizes.
+  -- Larger key sizes are used for algos with bigger SHA hashes.
+  -- See: https://datatracker.ietf.org/doc/html/rfc7518#section-3.3
+  -- See: https://en.wikipedia.org/wiki/RSA_cryptosystem
+  let (rs256KeySize, rs384KeySize, rs512KeySize) = (2048 `div` 8, 3072 `div` 8, 4096 `div` 8)
+      (jwsAlgorithm, params) = case algorithm of
+        RS256 -> (JOSE.RS256, JOSE.RSAGenParam rs256KeySize)
+        RS384 -> (JOSE.RS384, JOSE.RSAGenParam rs384KeySize)
+        RS512 -> (JOSE.RS512, JOSE.RSAGenParam rs512KeySize)
         ES256 -> (JOSE.ES256, JOSE.ECGenParam JOSE.P_256)
         ES384 -> (JOSE.ES384, JOSE.ECGenParam JOSE.P_384)
         ES512 -> (JOSE.ES512, JOSE.ECGenParam JOSE.P_521)
